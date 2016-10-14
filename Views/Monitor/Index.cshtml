@@ -1,0 +1,239 @@
+﻿
+@{
+    Layout = null;
+}
+@*@Model MonitoringApplication.Models.VirtualMachine*@
+@using MonitoringApplication.Models
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <script src="~/Scripts/echarts.common.min.js"></script>
+</head>
+<body>
+    <div>
+        <div>
+            虚拟机：
+            <select id="vm" name="vm">
+                @foreach (var item in ViewData["VMs"] as List<VirtualMachine>)
+                {
+                    <option value="@item.ServiceName,@item.DeploymentName,@item.VMName">@item.VMName</option>
+                }
+            </select>
+        </div>
+        <div id="vmChart" style="width:1300px;height:400px;">
+
+        </div>
+        <div>
+            WebSite：
+            <select id="website">
+                @foreach (var item in ViewData["WebSites"] as List<WebSite>)
+                {
+                    <option value="@item.WebSpace,@item.Name">@item.Name</option>
+                }
+            </select>
+        </div>
+        <div id="webSiteChat" style="width:1300px;height:400px;">
+
+        </div>
+    </div>
+</body>
+</html>
+<script>
+    //虚拟机监控
+    var vmChart = echarts.init(document.getElementById('vmChart'));
+    function getVmMonitoringData() {
+        $.ajax({
+            url: '/Monitor/GetVMMonitoring',
+            data: { 'data': $('#vm option:selected').val() },
+            dataType: 'json',
+            type: 'GET',
+            success: function (datas) {
+                var option = {
+                    title: {
+                        text: '监控数据'
+                    },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: []//['邮件营销', '联盟广告', '视频广告', '直接访问', '搜索引擎']
+                    },
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: [
+                        {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: []//['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+                        }
+                    ],
+                    yAxis: [
+                        {
+                            type: 'value'
+                        }
+                    ],
+                    series: [
+                        //{
+                        //    name: '邮件营销',
+                        //    type: 'line',
+                        //    stack: '总量',
+                        //    areaStyle: { normal: {} },
+                        //    data: [120, 132, 101, 134, 90, 230, 210]
+                        //},
+                        //{
+                        //    name: '联盟广告',
+                        //    type: 'line',
+                        //    stack: '总量',
+                        //    areaStyle: { normal: {} },
+                        //    data: [220, 182, 191, 234, 290, 330, 310]
+                        //},
+                        //{
+                        //    name: '视频广告',
+                        //    type: 'line',
+                        //    stack: '总量',
+                        //    areaStyle: { normal: {} },
+                        //    data: [150, 232, 201, 154, 190, 330, 410]
+                        //},
+                        //{
+                        //    name: '直接访问',
+                        //    type: 'line',
+                        //    stack: '总量',
+                        //    areaStyle: { normal: {} },
+                        //    data: [320, 332, 301, 334, 390, 330, 320]
+                        //},
+                        //{
+                        //    name: '搜索引擎',
+                        //    type: 'line',
+                        //    stack: '总量',
+                        //    label: {
+                        //        normal: {
+                        //            show: true,
+                        //            position: 'top'
+                        //        }
+                        //    },
+                        //    areaStyle: { normal: {} },
+                        //    data: [820, 932, 901, 934, 1290, 1330, 1320]
+                        //}
+                    ]
+                };
+                for (var i in datas) {
+                    option.legend.data.push(datas[i].DisplayName);
+                    option.series.push({ 'name': datas[i].DisplayName, 'type': 'line', 'stack': '总量', 'areaStyle': { normal: {} }, 'data': [] });
+                    for (var j in datas[i].MetricValues) {
+                        option.series[i].data.push(datas[i].MetricValues[j].Maximum);
+                        if (i == 0) {
+                            option.xAxis[i].data.push(datas[i].MetricValues[j].Timestamp);
+                        } 
+                    }
+                }
+                vmChart.setOption(option);
+            }
+        });
+    }
+    getVmMonitoringData();
+    setInterval(getVmMonitoringData, 300000);
+    //setInterval(getMonitoringData, 5000);
+    $('#vm').change(function () {
+        getVmMonitoringData();
+    });
+    //WebSite监控
+    var webSiteChart = echarts.init(document.getElementById('webSiteChat'));
+    function getWebSiteMonitoringData() {
+        $.ajax({
+            url: '/Monitor/GetWebSiteMonitoring',
+            data: { 'data': $('#website option:selected').val() },
+            dataType: 'json',
+            typt: 'GET',
+            success: function (datas) {
+                var option = {
+                    title: {
+                        text: '监控数据'
+                    },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: []
+                    },
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: [
+                        {
+                            type: 'category',
+                            boundaryGap: false,
+                            data: []
+                        }
+                    ],
+                    yAxis: [
+                        {
+                            type: 'value'
+                        }
+                    ],
+                    series: [
+                    ]
+                };
+                for (var i in datas) {
+                    option.legend.data.push(datas[i].DisplayName);
+                    option.series.push({ 'name': datas[i].DisplayName, 'type': 'line', 'stack': '总量', 'areaStyle': { normal: {} }, 'data': [] });
+                    for (var j in datas[i].MetricValues) {
+                        option.series[i].data.push(datas[i].MetricValues[j].Average);
+                        if (i == 0) {
+                            option.xAxis[i].data.push(datas[i].MetricValues[j].Timestamp);
+                        }
+                    }
+                }
+                webSiteChart.setOption(option);
+            }
+        });
+    }
+    getWebSiteMonitoringData();
+    setInterval(getWebSiteMonitoringData, 300000);
+    $('#website').change(function () {
+        getWebSiteMonitoringData();
+    });
+
+    //访问WebSite站点
+    setInterval(function () {
+        $.ajax({
+            url: 'http://huzcwebapp1.chinacloudsites.cn/',
+            type: "POST",
+            crossDomain: true,
+            dataType: "jsonp",
+            //complete: function () {
+            //    console.log('huzcwebapp1 access success');
+            //}
+        });
+        $.ajax({
+            url: 'http://huzcwebapp2.chinacloudsites.cn/',
+            type: "POST",
+            crossDomain: true,
+            dataType: "jsonp",
+            //complete: function () {
+            //    console.log('huzcwebapp2 access success');
+            //}
+        });
+    }, 5000);
+</script>
